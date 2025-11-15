@@ -3,12 +3,14 @@
     { "name": $DEVICE_NAME$, "board": $BOARD_TYPE$, "serial": $SERIAL$}
 ],
 "programs":[
-    {"name": $PROGRAM_NAME$, "build_type": $BUILD_TYPE$, "src_path": $SRC_PATH$, "device_name": $TARGET_DEVICE_NAME$, "debug_device_name": $DEBUG_DEVICE_NAME$}
+    {"name": $PROGRAM_NAME$, "build_type": $BUILD_TYPE$, "src_path": $SRC_PATH$, "device_name": $TARGET_DEVICE_NAME$, "debug_device_name": $DEBUG_DEVICE_NAME$, "gdb_port": $GDB_PORT$}
 ],
 "behaviour": $BEHAVIOUR$,
 "build_path":$BUILD_PATH$,
 "build_nproc": $BUILD_NPROC$,
 "pico_sdk_path": $PICO_SDK_PATH$,
-"openocd_debug": $OPENOCD_DEBUG$,
-"gdb_commands_path": $GDB_COMMANDS_PATH$
+"gdb_debug": $GDB_DEBUG$,
+"openocd_output": $OPENOCD_OUTPUT$,
+"gdb_commands_path": $GDB_COMMANDS_PATH$,
+"picotool_listen": $PICOTOOL_LISTEN$
 }

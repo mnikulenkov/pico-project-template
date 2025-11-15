@@ -6,13 +6,15 @@
     { "name": "pico_device2", "board": "pico2", "serial": "5044506130329E1F"}
 ],
 "programs":[
-    {"name": "blink1", "build_type": "debug", "src_path": "src", "device_name": "pico_device1", "debug_device_name": "debug_probe1"},
-    {"name": "blink2", "build_type": "debug", "src_path": "src", "device_name": "pico_device2", "debug_device_name": "debug_probe2"}
+    {"name": "blink1", "build_type": "debug", "src_path": "src", "device_name": "pico_device1", "debug_device_name": "debug_probe1", "gdb_port": "3333"},
+    {"name": "blink2", "build_type": "debug", "src_path": "src", "device_name": "pico_device2", "debug_device_name": "debug_probe2", "gdb_port": "3333"}
 ],
 "behaviour": "run",
 "build_path":"build",
 "build_nproc": "2",
 "pico_sdk_path": "/home/m/pico/pico_sdk/",
-"openocd_debug": "enable",
-"gdb_commands_path": "gdb_commands.json"
+"gdb_debug": "enable",
+"openocd_output": "enable",
+"gdb_commands_path": "gdb_commands.json",
+"picotool_listen": "enable"
 }
