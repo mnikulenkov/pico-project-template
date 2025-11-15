@@ -6,7 +6,9 @@ import os
 BOARD_TYPES = {"pico", "pico_w", "pico2", "pico2_w"}
 BUILD_TYPES = {"debug", "release"}
 BEHAVIOUR_TYPES = {"run", "build_only"}
-OPENOCD_DEBUG = {"enable", "disable"}
+GDB_DEBUG = {"enable", "disable"}
+PICOTOOL_LISTEN = {"enable", "disable"}
+OPENOCD_OUTPUT = {"enable", "disable"}
 
 def err(text):
     print(text)
@@ -49,10 +51,14 @@ if "pico_sdk_path" not in config.keys():
     err("An error occurred: No 'pico_sdk_path' in json structure.")
 if "build_nproc" not in config.keys():
     err("An error occurred: No 'build_nproc' in json structure.")
-if "openocd_debug" not in config.keys():
-    err("An error occurred: No 'openocd_debug' in json structure.")
+if "gdb_debug" not in config.keys():
+    err("An error occurred: No 'gdb_debug' in json structure.")
 if "gdb_commands_path" not in config.keys():
     err("An error occurred: No 'gdb_commands_path' in json structure.")
+if "openocd_output" not in config.keys():
+    err("An error occurred: No 'openocd_output' in json structure.")
+if "picotool_listen" not in config.keys():
+    err("An error occurred: No 'picotool_listen' in json structure.")
 
 for device in config["devices"]:
     if "name" not in device:
@@ -73,6 +79,12 @@ for program in config["programs"]:
         err("An error occurred: Incorrect program specified, no 'src_path' found") 
     if "debug_device_name" not in program:
         err("An error occurred: Incorrect program specified, no 'debug_device_name' found")
+    if "gdb_port" not in program:
+        err("An error occurred: Incorrect program specified, no 'gdb_port' found")
+    if "tcl_port" not in program:
+        err("An error occurred: Incorrect program specified, no 'tcl_port' found")
+    if "telnet_port" not in program:
+        err("An error occurred: Incorrect program specified, no 'telnet_port' found")
     if '-' in program["name"]:
         err("Forbidden symbol '-' in program name")
 
@@ -93,6 +105,9 @@ for program in config["programs"]:
     if program["src_path"][0] != '/':
         program["src_path"] = "{v1}/{v2}".format(v1=script_dir, v2=program["src_path"])
     program["src_path"] = program["src_path"].strip()
+    program["gdb_port"] = program["gdb_port"].strip()
+    program["tcl_port"] = program["tcl_port"].strip()
+    program["telnet_port"] = program["telnet_port"].strip()
 
 config["behaviour"] = config["behaviour"].lower().strip()
 config["build_path"] = config["build_path"].strip()
@@ -105,6 +120,8 @@ if config["pico_sdk_path"][0] != '/':
 config["gdb_commands_path"] = config["gdb_commands_path"].strip()
 if config["gdb_commands_path"][0] != '/':
         config["gdb_commands_path"] = "{v1}/{v2}".format(v1=script_dir, v2=config["gdb_commands_path"])
+config["openocd_output"] = config["openocd_output"].lower().strip()
+config["picotool_listen"] = config["picotool_listen"].strip()
 
 #check for duplicates
 DEVICE_NAMES = set()
@@ -118,6 +135,24 @@ for program in config["programs"]:
     if program["name"] in PROGRAM_NAMES:
         err("An error occurred: Duplicate program name found.") 
     PROGRAM_NAMES.add(program["name"])
+
+PROGRAM_GDB_PORTS = set()
+for program in config["programs"]:
+    if program["gdb_port"] in PROGRAM_GDB_PORTS and len(program["gdb_port"]) > 0:
+        err("An error occurred: Duplicate gdb port found.") 
+    PROGRAM_NAMES.add(program["gdb_port"])
+
+PROGRAM_TCL_PORTS = set()
+for program in config["programs"]:
+    if program["tcl_port"] in PROGRAM_GDB_PORTS and len(program["tcl_port"]) > 0:
+        err("An error occurred: Duplicate tcl port found.") 
+    PROGRAM_NAMES.add(program["tcl_port"])
+
+PROGRAM_TELNET_PORTS = set()
+for program in config["programs"]:
+    if program["telnet_port"] in PROGRAM_GDB_PORTS and len(program["telnet_port"]) > 0:
+        err("An error occurred: Duplicate telnet port found.") 
+    PROGRAM_NAMES.add(program["telnet_port"])
 
 #check settings correctness
 for device in config["devices"]:
@@ -134,6 +169,8 @@ for program in config["programs"]:
 
 if config["behaviour"] not in BEHAVIOUR_TYPES:
     err("An error occurred: incorrect behaviour '{}' found.".format(config["behaviour"]))
+if config["picotool_listen"] not in PICOTOOL_LISTEN:
+    err("An error occurred: incorrect picotool_listen parameter '{}' found.".format(config["picotool_listen"]))
 
 try:
     int(config["build_nproc"])
@@ -143,8 +180,8 @@ except ValueError:
 behaviour = config["behaviour"]
 if behaviour not in ("run", "build_only"):
     err("Behaviour {} is not supported.".format(behaviour))
-if config["openocd_debug"] not in OPENOCD_DEBUG:
-    err("An error occurred: incorrect openocd_debug parameter '{}' found.".format(config["openocd_debug"]))
+if config["gdb_debug"] not in GDB_DEBUG:
+    err("An error occurred: incorrect gdb_debug parameter '{}' found.".format(config["gdb_debug"]))
 
 gdb_commands = []
 if len(config["gdb_commands_path"]) > 0:
@@ -155,9 +192,18 @@ if len(config["gdb_commands_path"]) > 0:
     except IOError as e:
         err("An error occurred: {}".format(e))
 
+if config["picotool_listen"] == "disable" and config["behaviour"] == "run":
+    while True:
+        answer = input("Proceeding will flash devices with regular binaries. You will have to manually flash them with unpluggable binaries to use this tool later. Do you want to continue? (y/n): ").strip().lower()
+        if answer in ('yes', 'no', 'y', 'n'):
+            break
+        if answer in ('no', 'n'):
+            print("Terminating program.")
+        sys.exit(0)
+
 do_write = True
 do_build = True
-do_debug = (config["openocd_debug"] == "enable")
+do_debug = (config["gdb_debug"] == "enable")
 if behaviour in ("build_only"):
     do_write = False
     do_debug = False
@@ -184,6 +230,7 @@ if do_build:
 for program in config["programs"]:
     device = next(d for d in config["devices"] if d["name"] == program["device_name"])
     board_arg = device["board"]
+    stdio_usb_arg = (config["picotool_listen"] == "enable")
     serial = device["serial"]
     program_name = program["name"]
 
@@ -199,7 +246,7 @@ for program in config["programs"]:
             build_type_arg = "Release"
         src_path = program["src_path"] 
 
-        run_shell("cmake -DPICO_BOARD={v1} -DCMAKE_BUILD_TYPE={v2} -DPICO_SDK_PATH={v3} -B {v4} -S {v5}".format(v1=board_arg, v2=build_type_arg, v3=pico_sdk_path_arg, v4=make_path, v5=src_path))
+        run_shell("cmake -DPICO_BOARD={v1} -DCMAKE_BUILD_TYPE={v2} -DPICO_SDK_PATH={v3} -DSTDIO_USB={v4} -B {v5} -S {v6}".format(v1=board_arg, v2=build_type_arg, v3=pico_sdk_path_arg, v4=stdio_usb_arg, v5=make_path, v6=src_path))
         files = [f for f in os.listdir(make_path) if os.path.isfile("{v1}/{v2}".format(v1=make_path, v2=f)) and ".uf2" in f]
         target_absent = (len(files) == 0)
         if len(files) > 1:
@@ -239,18 +286,21 @@ if do_debug:
     debug_path = "{}/debug".format(bin_path)
     config_path = "{}/config".format(debug_path)
     
-    #kill all present gdb and openocd tasks
+    #kill all openocd jobs
+    subprocess.run(["killall", "openocd"])
+
+    enable_openocd_output = (config["openocd_output"] == "enable")
 
     tasks = []
-    gdb_port_counter = 3333
     for program in config["programs"]:
         if program["debug_device_name"] != "":
             program_name = program["name"]
             debug_device = next(d for d in config["devices"] if d["name"] == program["debug_device_name"])
             picoprobe_serial = debug_device["serial"] 
             elf_file_path = "{v1}/elf/{v2}.elf".format(v1=debug_path, v2=program_name)
-            gdb_port = str(gdb_port_counter)
-            gdb_port_counter = gdb_port_counter + 1;
+            gdb_port = program["gdb_port"]
+            tcl_port = program["tcl_port"]
+            telnet_port = program["telnet_port"]
             
             gdb_list = ["-ex file \" {}\" ".format(elf_file_path), "-ex \" target remote localhost:{}\" ".format(gdb_port), "-ex \" load\" ", "-ex \" monitor reset init\" "]
             if gdb_commands:
@@ -261,17 +311,29 @@ if do_debug:
 
             # Copy the current environment which must include WEZTERM_UNIX_SOCKET
             env = os.environ.copy()
+            
+            if enable_openocd_output:
+                # Assuming WezTerm GUI is already running, spawn new tabs with your commands:
+                openocd_startup = (
+                    "echo -ne '\\033]2;{title}\\007'; "
+                    "openocd -f board/pico-debug.cfg -c 'adapter serial {serial}' -c 'gdb port {gdb_port}' -c 'tcl port {tcl_port}' -c 'telnet port {telnet_port}'; "
+                 "exec bash"
+                ).format(title="OCD {}".format(program_name), serial=picoprobe_serial, gdb_port=gdb_port, tcl_port=tcl_port, telnet_port=telnet_port)
 
-            # Assuming WezTerm GUI is already running, spawn new tabs with your commands:
-            openocd_startup = (
-                "echo -ne '\\033]2;{title}\\007'; "
-                "openocd -f board/pico-debug.cfg -c 'adapter serial {serial}' -c 'gdb port {port}'; "
-                "exec bash"
-            ).format(title="OCD {}".format(program_name), serial=picoprobe_serial, port=gdb_port)
+                spawn_cmd_1 = ["wezterm", "cli", "spawn", "--", "bash", "-c", openocd_startup]
+                tasks.append(subprocess.Popen(spawn_cmd_1, env=env))
+            else:
+                openocd_startup = (
+                    "openocd -f board/pico-debug.cfg "
+                    "-c 'adapter serial {serial}' "
+                    "-c 'gdb port {gdb_port}'"
+                    "-c 'tcl port {tcl_port}'"
+                    "-c 'telnet port {telnet_port}'"
+                ).format(serial=picoprobe_serial, gdb_port=gdb_port, tcl_port=tcl_port, telnet_port=telnet_port)
 
-            spawn_cmd_1 = ["wezterm", "cli", "spawn", "--", "bash", "-c", openocd_startup]
-            tasks.append(subprocess.Popen(spawn_cmd_1, env=env))
-
+                spawn_cmd_1 = ["bash", "-c", openocd_startup]
+                tasks.append(subprocess.Popen(spawn_cmd_1, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, env=env))
+                
             gdb_startup = (
                 "echo -ne '\\033]2;{title}\\007'; "
                 "gdb-multiarch {gdb_list}; "

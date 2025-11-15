@@ -81,6 +81,10 @@ for program in config["programs"]:
         err("An error occurred: Incorrect program specified, no 'debug_device_name' found")
     if "gdb_port" not in program:
         err("An error occurred: Incorrect program specified, no 'gdb_port' found")
+    if "tcl_port" not in program:
+        err("An error occurred: Incorrect program specified, no 'tcl_port' found")
+    if "telnet_port" not in program:
+        err("An error occurred: Incorrect program specified, no 'telnet_port' found")
     if '-' in program["name"]:
         err("Forbidden symbol '-' in program name")
 
@@ -102,6 +106,8 @@ for program in config["programs"]:
         program["src_path"] = "{v1}/{v2}".format(v1=script_dir, v2=program["src_path"])
     program["src_path"] = program["src_path"].strip()
     program["gdb_port"] = program["gdb_port"].strip()
+    program["tcl_port"] = program["tcl_port"].strip()
+    program["telnet_port"] = program["telnet_port"].strip()
 
 config["behaviour"] = config["behaviour"].lower().strip()
 config["build_path"] = config["build_path"].strip()
@@ -135,6 +141,18 @@ for program in config["programs"]:
     if program["gdb_port"] in PROGRAM_GDB_PORTS and len(program["gdb_port"]) > 0:
         err("An error occurred: Duplicate gdb port found.") 
     PROGRAM_NAMES.add(program["gdb_port"])
+
+PROGRAM_TCL_PORTS = set()
+for program in config["programs"]:
+    if program["tcl_port"] in PROGRAM_GDB_PORTS and len(program["tcl_port"]) > 0:
+        err("An error occurred: Duplicate tcl port found.") 
+    PROGRAM_NAMES.add(program["tcl_port"])
+
+PROGRAM_TELNET_PORTS = set()
+for program in config["programs"]:
+    if program["telnet_port"] in PROGRAM_GDB_PORTS and len(program["telnet_port"]) > 0:
+        err("An error occurred: Duplicate telnet port found.") 
+    PROGRAM_NAMES.add(program["telnet_port"])
 
 #check settings correctness
 for device in config["devices"]:
@@ -228,7 +246,7 @@ for program in config["programs"]:
             build_type_arg = "Release"
         src_path = program["src_path"] 
 
-        run_shell("cmake -DPICO_BOARD={v1} -DCMAKE_BUILD_TYPE={v2} -DPICO_SDK_PATH={v3} -DSTDIO_USB={v4} -B {v5} -S {v6}".format(v1=board_arg, v2=build_type_arg, v3=pico_sdk_path_arg, v3==stdio_usb_arg v5=make_path, v6=src_path))
+        run_shell("cmake -DPICO_BOARD={v1} -DCMAKE_BUILD_TYPE={v2} -DPICO_SDK_PATH={v3} -DSTDIO_USB={v4} -B {v5} -S {v6}".format(v1=board_arg, v2=build_type_arg, v3=pico_sdk_path_arg, v4=stdio_usb_arg, v5=make_path, v6=src_path))
         files = [f for f in os.listdir(make_path) if os.path.isfile("{v1}/{v2}".format(v1=make_path, v2=f)) and ".uf2" in f]
         target_absent = (len(files) == 0)
         if len(files) > 1:
@@ -271,7 +289,7 @@ if do_debug:
     #kill all openocd jobs
     subprocess.run(["killall", "openocd"])
 
-    enable_openocd_output = (config["openocd_output"] == "enabled")
+    enable_openocd_output = (config["openocd_output"] == "enable")
 
     tasks = []
     for program in config["programs"]:
@@ -281,6 +299,8 @@ if do_debug:
             picoprobe_serial = debug_device["serial"] 
             elf_file_path = "{v1}/elf/{v2}.elf".format(v1=debug_path, v2=program_name)
             gdb_port = program["gdb_port"]
+            tcl_port = program["tcl_port"]
+            telnet_port = program["telnet_port"]
             
             gdb_list = ["-ex file \" {}\" ".format(elf_file_path), "-ex \" target remote localhost:{}\" ".format(gdb_port), "-ex \" load\" ", "-ex \" monitor reset init\" "]
             if gdb_commands:
@@ -296,9 +316,9 @@ if do_debug:
                 # Assuming WezTerm GUI is already running, spawn new tabs with your commands:
                 openocd_startup = (
                     "echo -ne '\\033]2;{title}\\007'; "
-                    "openocd -f board/pico-debug.cfg -c 'adapter serial {serial}' -c 'gdb port {port}'; "
+                    "openocd -f board/pico-debug.cfg -c 'adapter serial {serial}' -c 'gdb port {gdb_port}' -c 'tcl port {tcl_port}' -c 'telnet port {telnet_port}'; "
                  "exec bash"
-                ).format(title="OCD {}".format(program_name), serial=picoprobe_serial, port=gdb_port)
+                ).format(title="OCD {}".format(program_name), serial=picoprobe_serial, gdb_port=gdb_port, tcl_port=tcl_port, telnet_port=telnet_port)
 
                 spawn_cmd_1 = ["wezterm", "cli", "spawn", "--", "bash", "-c", openocd_startup]
                 tasks.append(subprocess.Popen(spawn_cmd_1, env=env))
@@ -306,8 +326,10 @@ if do_debug:
                 openocd_startup = (
                     "openocd -f board/pico-debug.cfg "
                     "-c 'adapter serial {serial}' "
-                    "-c 'gdb port {port}'"
-                ).format(serial=picoprobe_serial, port=gdb_port)
+                    "-c 'gdb port {gdb_port}'"
+                    "-c 'tcl port {tcl_port}'"
+                    "-c 'telnet port {telnet_port}'"
+                ).format(serial=picoprobe_serial, gdb_port=gdb_port, tcl_port=tcl_port, telnet_port=telnet_port)
 
                 spawn_cmd_1 = ["bash", "-c", openocd_startup]
                 tasks.append(subprocess.Popen(spawn_cmd_1, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, env=env))

@@ -6,8 +6,26 @@
     { "name": "pico_device2", "board": "pico2", "serial": "5044506130329E1F"}
 ],
 "programs":[
-    {"name": "blink1", "build_type": "debug", "src_path": "src", "device_name": "pico_device1", "debug_device_name": "debug_probe1", "gdb_port": "3333"},
-    {"name": "blink2", "build_type": "debug", "src_path": "src", "device_name": "pico_device2", "debug_device_name": "debug_probe2", "gdb_port": "3333"}
+    {
+    "name": "blink1", 
+    "build_type": "debug", 
+    "src_path": "src", 
+    "device_name": "pico_device1", 
+    "debug_device_name": "debug_probe1", 
+    "gdb_port": "3333",
+    "tcl_port": "6666",
+    "telnet_port": "4444"
+    },
+    {
+    "name": "blink2", 
+    "build_type": "debug", 
+    "src_path": "src", 
+    "device_name": "pico_device2", 
+    "debug_device_name": "debug_probe2", 
+    "gdb_port": "3334",
+    "tcl_port": "6667",
+    "telnet_port": "4445"
+    }
 ],
 "behaviour": "run",
 "build_path":"build",

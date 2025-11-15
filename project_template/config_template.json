@@ -3,7 +3,16 @@
     { "name": $DEVICE_NAME$, "board": $BOARD_TYPE$, "serial": $SERIAL$}
 ],
 "programs":[
-    {"name": $PROGRAM_NAME$, "build_type": $BUILD_TYPE$, "src_path": $SRC_PATH$, "device_name": $TARGET_DEVICE_NAME$, "debug_device_name": $DEBUG_DEVICE_NAME$, "gdb_port": $GDB_PORT$}
+    {
+    "name": $PROGRAM_NAME$, 
+    "build_type": $BUILD_TYPE$, 
+    "src_path": $SRC_PATH$, 
+    "device_name": $TARGET_DEVICE_NAME$, 
+    "debug_device_name": $DEBUG_DEVICE_NAME$, 
+    "gdb_port": $GDB_PORT$,
+    "tcl_port": $TCL_PORT$,
+    "telnet_port": $TELNET_PORT$
+    }
 ],
 "behaviour": $BEHAVIOUR$,
 "build_path":$BUILD_PATH$,
