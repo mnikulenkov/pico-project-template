@@ -31,9 +31,11 @@ target_link_libraries(${PROJECT_NAME}
     #pico_cyw43_arch_none # to use LED on pico w
     )
 
-#to enable usb debug output and use picotool load -f
-pico_enable_stdio_usb(${PROJECT_NAME} 1)
-pico_enable_stdio_uart(${PROJECT_NAME} 0)
+if(STDIO_USB)
+    #to enable usb debug output and use picotool load -f
+    pico_enable_stdio_usb(${PROJECT_NAME} 1)
+    pico_enable_stdio_uart(${PROJECT_NAME} 0)
+endif()
 
 # create map/bin/hex file etc.
 pico_add_extra_outputs(${PROJECT_NAME})

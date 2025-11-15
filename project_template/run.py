@@ -212,6 +212,7 @@ if do_build:
 for program in config["programs"]:
     device = next(d for d in config["devices"] if d["name"] == program["device_name"])
     board_arg = device["board"]
+    stdio_usb_arg = (config["picotool_listen"] == "enable")
     serial = device["serial"]
     program_name = program["name"]
 
@@ -227,7 +228,7 @@ for program in config["programs"]:
             build_type_arg = "Release"
         src_path = program["src_path"] 
 
-        run_shell("cmake -DPICO_BOARD={v1} -DCMAKE_BUILD_TYPE={v2} -DPICO_SDK_PATH={v3} -B {v4} -S {v5}".format(v1=board_arg, v2=build_type_arg, v3=pico_sdk_path_arg, v4=make_path, v5=src_path))
+        run_shell("cmake -DPICO_BOARD={v1} -DCMAKE_BUILD_TYPE={v2} -DPICO_SDK_PATH={v3} -DSTDIO_USB={v4} -B {v5} -S {v6}".format(v1=board_arg, v2=build_type_arg, v3=pico_sdk_path_arg, v3==stdio_usb_arg v5=make_path, v6=src_path))
         files = [f for f in os.listdir(make_path) if os.path.isfile("{v1}/{v2}".format(v1=make_path, v2=f)) and ".uf2" in f]
         target_absent = (len(files) == 0)
         if len(files) > 1:
@@ -267,7 +268,8 @@ if do_debug:
     debug_path = "{}/debug".format(bin_path)
     config_path = "{}/config".format(debug_path)
     
-    #kill all openocf jobs
+    #kill all openocd jobs
+    subprocess.run(["killall", "openocd"])
 
     enable_openocd_output = (config["openocd_output"] == "enabled")
 
