@@ -1,0 +1,14 @@
+{
+"devices":[
+  { "name": "debug_probe", "board": "pico", "serial": "5044506130329E1C"},
+  { "name": "main_pico", "board": "pico2", "serial": "111"}
+],
+"programs":[
+  {"name": "blink", "build_type": "debug", "src_path": "src", "device_name": "main_pico", "debug_device_name": "debug_probe"}
+],
+"behaviour": "run",
+"build_path":"build",
+"build_nproc": "2",
+"pico_sdk_path": "/home/m/pico/pico_sdk/",
+"openocd_debug": "enable"
+}

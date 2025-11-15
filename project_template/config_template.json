@@ -1,0 +1,13 @@
+{
+"devices":[
+  { "name": $DEVICE_NAME$, "board": $BOARD_TYPE$, "serial": $SERIAL$}
+],
+"programs":[
+  {"name": $PROGRAM_NAME$, "build_type": $BUILD_TYPE$, "src_path": $SRC_PATH$, "device_name": $TARGET_DEVICE_NAME$, "debug_device_name": $DEBUG_DEVICE_NAME$}
+],
+"behaviour": $BEHAVIOUR$,
+"build_path":$BUILD_PATH$,
+"build_nproc": $BUILD_NPROC$,
+"pico_sdk_path": $PICO_SDK_PATH$,
+"openocd_debug": $OPENOCD_DEBUG$
+}

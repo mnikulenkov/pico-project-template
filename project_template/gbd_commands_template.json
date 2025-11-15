@@ -1,0 +1,10 @@
+{
+$PROGRAM_NAME0$: [
+"command1",
+"command2"
+],
+$PROGRAM_NAME1$: [
+"command1",
+"command2"
+]
+}
