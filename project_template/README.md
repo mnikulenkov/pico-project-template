@@ -1,12 +1,12 @@
 ## Project config parameters
 
-[Project config template](config_template.json) \
+[Project config template](config_template.json)
 
 Config has "devices" and "programs" lists: a program is attached to a device, each of them is configured independently.\
 
 **DEVICE_NAME**\
 **BOARD_TYPE** *pico/pico_w/pico2/pico2_w*\
-**SERIAL** - pico's [serial number](../print_serial) \
+**SERIAL** - pico's [serial number](../print_serial)
 
 **PROGRAM_NAME**
 **BUILD_TYPE** *debug/release* - sets CMAKE_BUILD_TYPE in CMakeLists.txt.\
