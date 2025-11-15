@@ -9,5 +9,6 @@
 "build_path":$BUILD_PATH$,
 "build_nproc": $BUILD_NPROC$,
 "pico_sdk_path": $PICO_SDK_PATH$,
-"openocd_debug": $OPENOCD_DEBUG$
+"openocd_debug": $OPENOCD_DEBUG$,
+"gdb_commands_path": $GDB_COMMANDS_PATH$
 }

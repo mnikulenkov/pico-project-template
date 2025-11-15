@@ -10,5 +10,6 @@
 "build_path":"build",
 "build_nproc": "2",
 "pico_sdk_path": "/home/m/pico/pico_sdk/",
-"openocd_debug": "enable"
+"openocd_debug": "enable",
+"gdb_commands_path": "gdb_commands.json"
 }

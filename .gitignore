@@ -1,0 +1,4 @@
+debug/*
+examples/build_and_debug/build
+examples/build_and_run/build
+examples/build_only/build

@@ -36,16 +36,6 @@ try:
 except IOError as e:
     err("An error occurred: {}".format(e))
 
-gdb_commands = []
-if len(sys.argv) > 2:
-    gdb_commands_path = sys.argv[2]
-    try:
-        with open(gdb_commands_path, 'r') as file:
-            gdb_commands = json.loads(file.read())
-        file.close()
-    except IOError as e:
-        err("An error occurred: {}".format(e))
-
 #check config correctness
 if "devices" not in config.keys():
     err("An error occurred: No 'devices' in json structure.")
@@ -61,6 +51,8 @@ if "build_nproc" not in config.keys():
     err("An error occurred: No 'build_nproc' in json structure.")
 if "openocd_debug" not in config.keys():
     err("An error occurred: No 'openocd_debug' in json structure.")
+if "gdb_commands_path" not in config.keys():
+    err("An error occurred: No 'gdb_commands_path' in json structure.")
 
 for device in config["devices"]:
     if "name" not in device:
@@ -100,6 +92,7 @@ for program in config["programs"]:
     program["src_path"] = program["src_path"].strip()
     if program["src_path"][0] != '/':
         program["src_path"] = "{v1}/{v2}".format(v1=script_dir, v2=program["src_path"])
+    program["src_path"] = program["src_path"].strip()
 
 config["behaviour"] = config["behaviour"].lower().strip()
 config["build_path"] = config["build_path"].strip()
@@ -109,7 +102,9 @@ config["build_nproc"] = config["build_nproc"].strip()
 config["pico_sdk_path"] = config["pico_sdk_path"].strip()
 if config["pico_sdk_path"][0] != '/':
         config["pico_sdk_path"] = "{v1}/{v2}".format(v1=script_dir, v2=config["pico_sdk_path"])
-config["openocd_debug"] = config["openocd_debug"].strip()
+config["gdb_commands_path"] = config["gdb_commands_path"].strip()
+if config["gdb_commands_path"][0] != '/':
+        config["gdb_commands_path"] = "{v1}/{v2}".format(v1=script_dir, v2=config["gdb_commands_path"])
 
 #check for duplicates
 DEVICE_NAMES = set()
@@ -150,6 +145,15 @@ if behaviour not in ("run", "build_only"):
     err("Behaviour {} is not supported.".format(behaviour))
 if config["openocd_debug"] not in OPENOCD_DEBUG:
     err("An error occurred: incorrect openocd_debug parameter '{}' found.".format(config["openocd_debug"]))
+
+gdb_commands = []
+if len(config["gdb_commands_path"]) > 0:
+    try:
+        with open(config["gdb_commands_path"], 'r') as file:
+            gdb_commands = json.loads(file.read())
+        file.close()
+    except IOError as e:
+        err("An error occurred: {}".format(e))
 
 do_write = True
 do_build = True
