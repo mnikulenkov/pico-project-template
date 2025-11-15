@@ -6,9 +6,9 @@ import os
 BOARD_TYPES = {"pico", "pico_w", "pico2", "pico2_w"}
 BUILD_TYPES = {"debug", "release"}
 BEHAVIOUR_TYPES = {"run", "build_only"}
-GDB_DEBUG = {"enable", "disable"}
-PICOTOOL_LISTEN = {"enable", "disable"}
-OPENOCD_OUTPUT = {"enable", "disable"}
+GDB_DEBUG = {"on", "off"}
+PICOTOOL_LISTEN = {"on", "off"}
+OPENOCD_OUTPUT = {"on", "off"}
 
 def err(text):
     print(text)
@@ -197,7 +197,7 @@ if len(config["gdb_commands_path"]) > 0:
     except IOError as e:
         err("An error occurred: {}".format(e))
 
-if not ignore_stdout_warning and config["picotool_listen"] == "disable" and config["behaviour"] == "run":
+if not ignore_stdout_warning and config["picotool_listen"] == "off" and config["behaviour"] == "run":
     while True:
         answer = input("Proceeding will flash devices with regular binaries. You will have to manually flash them with unpluggable binaries to use this tool later. Do you want to continue? (y/n): ").strip().lower()
         if answer in ('yes', 'no', 'y', 'n'):
@@ -208,7 +208,7 @@ if not ignore_stdout_warning and config["picotool_listen"] == "disable" and conf
 
 do_write = True
 do_build = True
-do_debug = (config["gdb_debug"] == "enable")
+do_debug = (config["gdb_debug"] == "on")
 if behaviour in ("build_only"):
     do_write = False
     do_debug = False
@@ -235,7 +235,7 @@ if do_build:
 for program in config["programs"]:
     device = next(d for d in config["devices"] if d["name"] == program["device_name"])
     board_arg = device["board"]
-    stdio_usb_arg = (config["picotool_listen"] == "enable")
+    stdio_usb_arg = (config["picotool_listen"] == "on")
     serial = device["serial"]
     program_name = program["name"]
 
@@ -273,12 +273,12 @@ for program in config["programs"]:
         run_shell("mkdir -p {}/debug/elf".format(bin_path))
         run_shell("cp {v1}/{v2} {v3}/debug/elf/{v4}.elf".format(v1=make_path, v2=files[0], v3=bin_path, v4=program_name))
 
-#if do_write:
-#    files = [f for f in os.listdir(bin_path) if os.path.isfile("{v1}/{v2}".format(v1=bin_path, v2=f)) and ".uf2" in f]
-#    for f in files:
-#        uf_path = "{v1}/{v2}".format(v1=bin_path, v2=f)
-#        serial = f.split("-")[-1][:-4]
-#        run_shell("picotool load {v1} --ser {v2} -f".format(v1=uf_path, v2=serial))
+if do_write:
+    files = [f for f in os.listdir(bin_path) if os.path.isfile("{v1}/{v2}".format(v1=bin_path, v2=f)) and ".uf2" in f]
+    for f in files:
+        uf_path = "{v1}/{v2}".format(v1=bin_path, v2=f)
+        serial = f.split("-")[-1][:-4]
+        run_shell("picotool load {v1} --ser {v2} -f".format(v1=uf_path, v2=serial))
 
 if do_debug: 
     openocd_startup_commands = []
@@ -291,10 +291,11 @@ if do_debug:
     debug_path = "{}/debug".format(bin_path)
     config_path = "{}/config".format(debug_path)
     
-    #kill all openocd jobs
+    #kill all openocd and gdb jobs
     subprocess.run(["killall", "openocd"])
+    subprocess.run(["killall", "gdb"])
 
-    enable_openocd_output = (config["openocd_output"] == "enable")
+    enable_openocd_output = (config["openocd_output"] == "on")
 
     tasks = []
     for program in config["programs"]:

@@ -20,6 +20,6 @@
 "pico_sdk_path": $PICO_SDK_PATH$,
 "gdb_debug": $GDB_DEBUG$,
 "openocd_output": $OPENOCD_OUTPUT$,
-"gdb_commands_path": $GDB_COMMANDS_PATH$,
-"picotool_listen": $PICOTOOL_LISTEN$
+"picotool_listen": $PICOTOOL_LISTEN$,
+"gdb_commands_path": $GDB_COMMANDS_PATH$
 }
