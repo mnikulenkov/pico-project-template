@@ -31,6 +31,11 @@ if len(sys.argv) <= 1:
 script_dir = os.path.dirname(os.path.abspath(__file__))
 config_path = sys.argv[1]
 
+ignore_stdout_warning = False
+if len(sys.argv) >= 3:
+    if sys.argv[2].lower().strip() == "--ignore_stdout_warning":
+        ignore_stdout_warning = True
+
 try:
     with open(config_path, 'r') as file:
         config = json.loads(file.read())
@@ -192,7 +197,7 @@ if len(config["gdb_commands_path"]) > 0:
     except IOError as e:
         err("An error occurred: {}".format(e))
 
-if config["picotool_listen"] == "disable" and config["behaviour"] == "run":
+if not ignore_stdout_warning and config["picotool_listen"] == "disable" and config["behaviour"] == "run":
     while True:
         answer = input("Proceeding will flash devices with regular binaries. You will have to manually flash them with unpluggable binaries to use this tool later. Do you want to continue? (y/n): ").strip().lower()
         if answer in ('yes', 'no', 'y', 'n'):
