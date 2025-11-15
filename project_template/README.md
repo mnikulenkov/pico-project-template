@@ -2,7 +2,7 @@
 
 [Project config template](config_template.json)
 
-Config has "devices" and "programs" lists: a program is attached to a device, each of them is configured independently.\
+Config has "devices" and "programs" lists: a program is attached to a device, each of them is configured independently.
 
 **DEVICE_NAME**\
 **BOARD_TYPE** *pico/pico_w/pico2/pico2_w*\
@@ -15,7 +15,7 @@ Config has "devices" and "programs" lists: a program is attached to a device, ea
 **DEBUG_DEVICE_NAME** - DEVICE_NAME of debug probe connected to target device.\
 **GDB_PORT**\
 **TCL_PORT**\
-**TELNET_PORT**\
+**TELNET_PORT**
 
 **BEHAVIOUR** *run/build_only* - "run" to build and flash target devices; "build_only" to just write binaries to BUILD_PATH.\
 **BUILD_PATH**\
@@ -24,8 +24,8 @@ Config has "devices" and "programs" lists: a program is attached to a device, ea
 **GDB_DEBUG** *on/of* - to run GDB debugging via WezTerm.\
 **OPENOCD_OUTPUT** *on/of* - to show OpenOCD tabs along with GDB in WezTerm.\
 **PICOTOOL_LISTEN** *on/of* - to build programs which make pico listen to BOOTSEL command so picotool can load them without unplugging. Setting PICOTOOL_LISTEN to "off" will disable this feature and you will have to manually flash pico with [BOOTSEL-friendly binary](../auto-bootsel/bin) to use this project template for autoflashing.\
-**GDB_COMMANDS_PATH** - path to list of GDB commands to be executed per program.\
+**GDB_COMMANDS_PATH** - path to list of GDB commands to be executed per program.
 
 ## Executing GDB commands
 
-Fill list of [GDB commads](gdb_commands.json) to be executed per program before GDB starts.
+Fill list of [GDB commads](gdb_commands_template.json) to be executed per program before GDB starts.
