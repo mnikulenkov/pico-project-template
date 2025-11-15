@@ -14,7 +14,7 @@ Requirements:
 Steps to configure picos:
 1. [Identify pico serial numer](print_serial)
 2. Flash pico with [auto-bootsel binary](auto-bootsel/bin) OR with [pico-debug](https://github.com/majbthrd/pico-debug) (rp2040 only) for a debug probe
-3. Configure [project template](project_template/README.md) for your setup
+3. Configure [project template](project_template) for your setup
 
 Usage: execute [run.sh](project_template/run.sh)
 
