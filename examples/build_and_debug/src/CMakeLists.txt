@@ -19,7 +19,7 @@ endif()
 # initialize the SDK
 pico_sdk_init()
 
-SET(SOURCES main.c)
+SET(SOURCES blink.c)
 
 add_executable(${PROJECT_NAME} ${SOURCES})
 

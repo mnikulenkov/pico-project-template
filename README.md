@@ -5,15 +5,16 @@ A template for Raspberry Pi Pico CMake projects with multiple devices. It stream
 ## How to use
 
 Requirements:
-1. Clone [pico sdk](https://github.com/raspberrypi/pico-sdk)
-2. Build and install [picotool](https://github.com/raspberrypi/picotool)
-3. Build and install [openocd](https://github.com/majbthrd/pico-debug/blob/master/howto/openocd.md)
-4. Install [WezTerm](https://github.com/wezterm/wezterm)
-5. Install Python 3
+1. Clone [pico SDK](https://github.com/raspberrypi/pico-sdk)
+2. Navigate to pico SDK folder and execute: git submodule update --init 
+3. Build and install [picotool](https://github.com/raspberrypi/picotool)
+4. Build and install [openocd](https://github.com/majbthrd/pico-debug/blob/master/howto/openocd.md)
+5. Install [WezTerm](https://github.com/wezterm/wezterm)
+6. Install Python 3
 
 Steps to configure picos:
 1. [Identify pico serial numer](print_serial)
-2. Flash pico with [auto-bootsel binary](auto-bootsel/bin) OR with [pico-debug](https://github.com/majbthrd/pico-debug) (rp2040 only) for a debug probe
+2. Flash pico with [auto-bootsel binary](auto-bootsel/bin) OR with [pico-debug](https://github.com/raspberrypi/debugprobe/releases) (rp2040 only) for a debug probe
 3. Configure [project template](project_template) for your setup
 
 Usage: execute [run.sh](project_template/run.sh)

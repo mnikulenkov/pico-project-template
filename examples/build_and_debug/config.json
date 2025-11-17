@@ -1,9 +1,9 @@
 {
 "devices":[
-    { "name": "debug_probe1", "board": "pico", "serial": "5044506130329E1C"},
-    { "name": "debug_probe2", "board": "pico", "serial": "5044506130329E1D"},
-    { "name": "pico_device1", "board": "pico2", "serial": "5044506130329E1E"},
-    { "name": "pico_device2", "board": "pico2", "serial": "5044506130329E1F"}
+    { "name": "debug_probe1", "board": "pico", "serial": "50445061206F8B1C"},
+    { "name": "debug_probe2", "board": "pico", "serial": "5044506130329E1C"},
+    { "name": "pico_device1", "board": "pico2", "serial": "4F5D32F78E0D1BEE"},
+    { "name": "pico_device2", "board": "pico2", "serial": "1101F654AD9EABCB"}
 ],
 "programs":[
     {
