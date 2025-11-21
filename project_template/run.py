@@ -14,16 +14,21 @@ def err(text):
     print(text)
     sys.exit(1)
 
-def run_shell_split(args):
+def run_shell_split(args, sudo=False, root_pw=''):
     print(" ".join(args))
-    res = subprocess.run(args, stdout=subprocess.PIPE)
+    if not sudo:
+        res = subprocess.run(args, stdout=subprocess.PIPE)
+    else:
+        root_pw_fix = root_pw + "\n"
+        args_fix = ["sudo", "-S"] + args
+        res = subprocess.run(args_fix, input=root_pw_fix.encode(), stdout=subprocess.PIPE)
     return_code = res.returncode
     #shell_output = res.stdout.decode('utf-8')
     if res.returncode != 0:
         err("Shell command '{v1}' exited with code '{v2}'".format(v1=" ".join(args), v2=return_code))
 
-def run_shell(shell_str):
-    run_shell_split(shell_str.split())
+def run_shell(shell_str, sudo=False, root_pw=''):
+    run_shell_split(shell_str.split(), sudo=sudo, root_pw=root_pw)
 
 if len(sys.argv) <= 1:
     err("An error occurred: No config path passed.")
@@ -64,6 +69,8 @@ if "openocd_output" not in config.keys():
     err("An error occurred: No 'openocd_output' in json structure.")
 if "picotool_listen" not in config.keys():
     err("An error occurred: No 'picotool_listen' in json structure.")
+if "root_pw" not in config.keys():
+    err("An error occurred: No 'root_pw' in json structure.")
 
 for device in config["devices"]:
     if "name" not in device:
@@ -126,7 +133,8 @@ config["gdb_commands_path"] = config["gdb_commands_path"].strip()
 if config["gdb_commands_path"][0] != '/':
         config["gdb_commands_path"] = "{v1}/{v2}".format(v1=script_dir, v2=config["gdb_commands_path"])
 config["openocd_output"] = config["openocd_output"].lower().strip()
-config["picotool_listen"] = config["picotool_listen"].strip()
+config["picotool_listen"] = config["picotool_listen"].lower().strip()
+config["root_pw"] = config["root_pw"].strip()
 
 #check for duplicates
 DEVICE_NAMES = set()
@@ -278,7 +286,7 @@ if do_write:
     for f in files:
         uf_path = "{v1}/{v2}".format(v1=bin_path, v2=f)
         serial = f.split("-")[-1][:-4]
-        run_shell("picotool load {v1} --ser {v2} -f".format(v1=uf_path, v2=serial))
+        run_shell("picotool load {v1} --ser {v2} -f".format(v1=uf_path, v2=serial), sudo=True, root_pw=config["root_pw"])
 
 if do_debug: 
     openocd_startup_commands = []

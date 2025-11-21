@@ -25,6 +25,7 @@ Config has "devices" and "programs" lists: a program is attached to a device, ea
 **OPENOCD_OUTPUT** *on/of* - to show OpenOCD tabs along with GDB in WezTerm.\
 **PICOTOOL_LISTEN** *on/of* - to build programs which make pico listen to BOOTSEL command so picotool can load them without unplugging. Setting PICOTOOL_LISTEN to "off" will disable this feature and you will have to manually flash pico with [BOOTSEL-friendly binary](../auto-bootsel/bin) to use this project template for autoflashing.\
 **GDB_COMMANDS_PATH** - path to list of GDB commands to be executed per program.
+**ROOT_PW** - root password. Required by picotool and openOCD 
 
 ## Executing GDB commands
 

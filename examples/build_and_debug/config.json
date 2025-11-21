@@ -34,5 +34,6 @@
 "gdb_debug": "on",
 "openocd_output": "on",
 "picotool_listen": "on",
-"gdb_commands_path": "gdb_commands.json"
+"gdb_commands_path": "gdb_commands.json",
+"root_pw": "1"
 }
