@@ -8,7 +8,7 @@
 "programs":[
     {
     "name": "blink1", 
-    "build_type": "debug", 
+    "build_type": "release", 
     "src_path": "src/blink100ms", 
     "device_name": "pico_device1", 
     "debug_device_name": "debug_probe1", 
@@ -18,7 +18,7 @@
     },
     {
     "name": "blink2", 
-    "build_type": "debug", 
+    "build_type": "release", 
     "src_path": "src/blink400ms", 
     "device_name": "pico_device2", 
     "debug_device_name": "debug_probe2", 
@@ -27,7 +27,7 @@
     "telnet_port": "4445"
     }
 ],
-"behaviour": "run",
+"behaviour": "build_only",
 "build_path":"build",
 "build_nproc": "2",
 "pico_sdk_path": "/home/m/pico/pico_sdk/",

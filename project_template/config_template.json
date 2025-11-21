@@ -21,5 +21,6 @@
 "gdb_debug": $GDB_DEBUG$,
 "openocd_output": $OPENOCD_OUTPUT$,
 "picotool_listen": $PICOTOOL_LISTEN$,
-"gdb_commands_path": $GDB_COMMANDS_PATH$
+"gdb_commands_path": $GDB_COMMANDS_PATH$,
+root_pw": $ROOT_PW$
 }

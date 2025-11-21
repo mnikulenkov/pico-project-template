@@ -208,7 +208,7 @@ if len(config["gdb_commands_path"]) > 0:
 
 if not ignore_stdout_warning and config["picotool_listen"] == "off" and config["behaviour"] == "run":
     while True:
-        answer = input("Proceeding will flash devices with regular binaries. You will have to manually flash them with unpluggable binaries to use this tool later. Do you want to continue? (y/n): ").strip().lower()
+        answer = input("Proceeding will flash devices with regular binaries. You will have to manually flash them with picotool-friendly binaries to use this tool later. Do you want to continue? (y/n): ").strip().lower()
         if answer in ('yes', 'no', 'y', 'n'):
             break
         if answer in ('no', 'n'):
