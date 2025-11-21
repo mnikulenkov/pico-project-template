@@ -2,6 +2,7 @@ import json
 import sys
 import subprocess
 import os
+import time
 
 BOARD_TYPES = {"pico", "pico_w", "pico2", "pico2_w"}
 BUILD_TYPES = {"debug", "release"}
@@ -286,7 +287,13 @@ if do_write:
     for f in files:
         uf_path = "{v1}/{v2}".format(v1=bin_path, v2=f)
         serial = f.split("-")[-1][:-4]
+        run_shell("picotool reboot --ser {v1} -f".format(v1=serial), sudo=True, root_pw=config["root_pw"])
+        time.sleep(5)
         run_shell("picotool load {v1} --ser {v2} -f".format(v1=uf_path, v2=serial), sudo=True, root_pw=config["root_pw"])
+
+#wait for picos to reboot
+print("Rebooting...")
+time.sleep(10)
 
 if do_debug: 
     openocd_startup_commands = []
@@ -310,11 +317,16 @@ if do_debug:
         if program["debug_device_name"] != "":
             program_name = program["name"]
             debug_device = next(d for d in config["devices"] if d["name"] == program["debug_device_name"])
+            target_device = next(d for d in config["devices"] if d["name"] == program["device_name"])
             picoprobe_serial = debug_device["serial"] 
             elf_file_path = "{v1}/elf/{v2}.elf".format(v1=debug_path, v2=program_name)
             gdb_port = program["gdb_port"]
             tcl_port = program["tcl_port"]
             telnet_port = program["telnet_port"]
+            if target_device["board"] in ("pico", "pico_w"):
+                target_arch = "rp2040"
+            else:
+                target_arch = "rp2350"
             
             gdb_list = ["-ex file \" {}\" ".format(elf_file_path), "-ex \" target remote localhost:{}\" ".format(gdb_port), "-ex \" load\" ", "-ex \" monitor reset init\" "]
             if gdb_commands:
@@ -330,24 +342,29 @@ if do_debug:
                 # Assuming WezTerm GUI is already running, spawn new tabs with your commands:
                 openocd_startup = (
                     "echo -ne '\\033]2;{title}\\007'; "
-                    "echo '{root_pw}' | sudo -S openocd -f board/pico-debug.cfg -c 'adapter serial {serial}' -c 'gdb port {gdb_port}' -c 'tcl port {tcl_port}' -c 'telnet port {telnet_port}'; "
+                    "echo '{root_pw}' | sudo -S openocd -f interface/cmsis-dap.cfg -f target/{target_arch}.cfg -c 'adapter serial {serial}' -c 'adapter speed 5000' -c 'gdb port {gdb_port}' -c 'tcl port {tcl_port}' -c 'telnet port {telnet_port}' -c 'program {elf} verify reset'; "
                  "exec bash"
-                ).format(title="OCD {}".format(program_name), serial=picoprobe_serial, gdb_port=gdb_port, tcl_port=tcl_port, telnet_port=telnet_port, root_pw=config["root_pw"])
+                ).format(title="OCD {}".format(program_name), serial=picoprobe_serial, gdb_port=gdb_port, tcl_port=tcl_port, telnet_port=telnet_port, root_pw=config["root_pw"], elf=elf_file_path, target_arch=target_arch)
 
                 spawn_cmd_1 = ["wezterm", "cli", "spawn", "--", "bash", "-c", openocd_startup]
                 tasks.append(subprocess.Popen(spawn_cmd_1, env=env))
             else:
                 openocd_startup = (
-                    "echo '{root_pw}' | sudo -S openocd -f board/pico-debug.cfg "
+                    "echo '{root_pw}' | sudo -S openocd -f interface/cmsis-dap.cfg -f target/{target_arch}.cfg "
                     "-c 'adapter serial {serial}' "
+                    "-c 'adapter speed 5000'"                    
                     "-c 'gdb port {gdb_port}'"
                     "-c 'tcl port {tcl_port}'"
                     "-c 'telnet port {telnet_port}'"
-                ).format(serial=picoprobe_serial, gdb_port=gdb_port, tcl_port=tcl_port, telnet_port=telnet_port, root_pw=config["root_pw"])
+                    "-c 'program {elf} verify reset'"
+                ).format(serial=picoprobe_serial, gdb_port=gdb_port, tcl_port=tcl_port, telnet_port=telnet_port, root_pw=config["root_pw"], elf=elf_file_path, target_arch=target_arch)
 
                 spawn_cmd_1 = ["bash", "-c", openocd_startup]
                 tasks.append(subprocess.Popen(spawn_cmd_1, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, env=env))
-                
+            
+            print("Starting OpenOCD...")
+            time.sleep(5)            
+    
             gdb_startup = (
                 "echo -ne '\\033]2;{title}\\007'; "
                 "gdb-multiarch {gdb_list}; "
