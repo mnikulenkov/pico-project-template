@@ -11,6 +11,10 @@ GDB_DEBUG = {"on", "off"}
 PICOTOOL_LISTEN = {"on", "off"}
 OPENOCD_OUTPUT = {"on", "off"}
 
+PICO_RELOAD_TIMEOUT = 5
+PICOTOOL_LOAD_TIMEOUT = 10
+OPENOCD_INIT_TIMEOUT = 5
+
 def err(text):
     print(text)
     sys.exit(1)
@@ -288,12 +292,12 @@ if do_write:
         uf_path = "{v1}/{v2}".format(v1=bin_path, v2=f)
         serial = f.split("-")[-1][:-4]
         run_shell("picotool reboot --ser {v1} -f".format(v1=serial), sudo=True, root_pw=config["root_pw"])
-        time.sleep(5)
+        time.sleep(PICO_RELOAD_TIMEOUT)
         run_shell("picotool load {v1} --ser {v2} -f".format(v1=uf_path, v2=serial), sudo=True, root_pw=config["root_pw"])
 
 #wait for picos to reboot
 print("Rebooting...")
-time.sleep(10)
+time.sleep(PICOTOOL_LOAD_TIMEOUT)
 
 if do_debug: 
     openocd_startup_commands = []
@@ -363,7 +367,7 @@ if do_debug:
                 tasks.append(subprocess.Popen(spawn_cmd_1, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, env=env))
             
             print("Starting OpenOCD...")
-            time.sleep(5)            
+            time.sleep(OPENOCD_INIT_TIMEOUT)            
     
             gdb_startup = (
                 "echo -ne '\\033]2;{title}\\007'; "
@@ -372,4 +376,4 @@ if do_debug:
             ).format(title="GDB {}".format(program_name), gdb_list=" ".join(gdb_list))
             spawn_cmd_2 = ["wezterm", "cli", "spawn", "--", "bash", "-c", gdb_startup]
             tasks.append(subprocess.Popen(spawn_cmd_2, env=env))
-    
+print("Done.")
