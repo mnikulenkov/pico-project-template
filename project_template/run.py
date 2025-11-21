@@ -330,20 +330,20 @@ if do_debug:
                 # Assuming WezTerm GUI is already running, spawn new tabs with your commands:
                 openocd_startup = (
                     "echo -ne '\\033]2;{title}\\007'; "
-                    "openocd -f board/pico-debug.cfg -c 'adapter serial {serial}' -c 'gdb port {gdb_port}' -c 'tcl port {tcl_port}' -c 'telnet port {telnet_port}'; "
+                    "echo '{root_pw}' | sudo -S openocd -f board/pico-debug.cfg -c 'adapter serial {serial}' -c 'gdb port {gdb_port}' -c 'tcl port {tcl_port}' -c 'telnet port {telnet_port}'; "
                  "exec bash"
-                ).format(title="OCD {}".format(program_name), serial=picoprobe_serial, gdb_port=gdb_port, tcl_port=tcl_port, telnet_port=telnet_port)
+                ).format(title="OCD {}".format(program_name), serial=picoprobe_serial, gdb_port=gdb_port, tcl_port=tcl_port, telnet_port=telnet_port, root_pw=config["root_pw"])
 
                 spawn_cmd_1 = ["wezterm", "cli", "spawn", "--", "bash", "-c", openocd_startup]
                 tasks.append(subprocess.Popen(spawn_cmd_1, env=env))
             else:
                 openocd_startup = (
-                    "openocd -f board/pico-debug.cfg "
+                    "echo '{root_pw}' | sudo -S openocd -f board/pico-debug.cfg "
                     "-c 'adapter serial {serial}' "
                     "-c 'gdb port {gdb_port}'"
                     "-c 'tcl port {tcl_port}'"
                     "-c 'telnet port {telnet_port}'"
-                ).format(serial=picoprobe_serial, gdb_port=gdb_port, tcl_port=tcl_port, telnet_port=telnet_port)
+                ).format(serial=picoprobe_serial, gdb_port=gdb_port, tcl_port=tcl_port, telnet_port=telnet_port, root_pw=config["root_pw"])
 
                 spawn_cmd_1 = ["bash", "-c", openocd_startup]
                 tasks.append(subprocess.Popen(spawn_cmd_1, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, env=env))
