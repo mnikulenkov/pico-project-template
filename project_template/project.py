@@ -3,6 +3,7 @@ import sys
 import subprocess
 import os
 import time
+import socket
 
 BOARD_TYPES = {"pico", "pico_w", "pico2", "pico2_w"}
 BUILD_TYPES = {"debug", "release"}
@@ -11,9 +12,20 @@ GDB_DEBUG = {"on", "off"}
 PICOTOOL_LISTEN = {"on", "off"}
 OPENOCD_OUTPUT = {"on", "off"}
 
-PICO_RELOAD_TIMEOUT = 5
+PICO_RELOAD_TIMEOUT = 10
 PICOTOOL_LOAD_TIMEOUT = 10
 OPENOCD_INIT_TIMEOUT = 5
+
+def send_gdb_command_remote(gdb_port, cmd):
+    try:
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            s.connect(('localhost', int(gdb_port)))
+            s.sendall((cmd + "\n").encode())
+            # Read response if needed
+            return True
+    except (ConnectionRefusedError, OSError) as e:
+        print(f"Failed to connect to GDB on port {gdb_port}: {e}")
+        return False
 
 def err(text):
     print(text)
@@ -299,7 +311,24 @@ if do_write:
 print("Rebooting...")
 time.sleep(PICOTOOL_LOAD_TIMEOUT)
 
+ocd_tasks = []
+gdb_tasks = []
+gdb_tasks_ports = []
+openocd_gdb_conn_proc = None
 if do_debug: 
+    openocd_gdb_conn = [
+    "openocd",
+    "-f", "openocd.cfg",
+    "-c", "gdb_max_connections 4"
+    ]
+
+    openocd_gdb_conn_proc = subprocess.Popen(
+        openocd_gdb_conn,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True
+    )
+
     openocd_startup_commands = []
     gdb_startup_commands = []
 
@@ -311,13 +340,13 @@ if do_debug:
     config_path = "{}/config".format(debug_path)
     
     #kill all openocd and gdb jobs
-    subprocess.run(["killall", "openocd"])
-    subprocess.run(["killall", "gdb"])
+    subprocess.run(["killall", "-9", "openocd"])
+    subprocess.run(["killall", "-9", "gdb"])
 
     enable_openocd_output = (config["openocd_output"] == "on")
-
-    tasks = []
     for program in config["programs"]:
+        if program["build_type"] == "release":
+            continue
         if program["debug_device_name"] != "":
             program_name = program["name"]
             debug_device = next(d for d in config["devices"] if d["name"] == program["debug_device_name"])
@@ -332,12 +361,12 @@ if do_debug:
             else:
                 target_arch = "rp2350"
             
-            gdb_list = ["-ex file \" {}\" ".format(elf_file_path), "-ex \" target remote localhost:{}\" ".format(gdb_port), "-ex \" load\" ", "-ex \" monitor reset init\" "]
+            gdb_list = ["-ex \"set confirm off\"", "-ex \"set pagination off\"","-ex \"file {}\" ".format(elf_file_path), "-ex \"target remote localhost:{}\" ".format(gdb_port), "-ex \"load\" ", "-ex \"monitor reset init\" "]
             if gdb_commands:
                 if program_name in gdb_commands.keys():
                     for command in gdb_commands[program_name]:
-                        gdb_list.append("-ex \" {}\" ".format(command.strip()))
-            gdb_list.append("-ex \" continue\" ")
+                        gdb_list.append("-ex \"{}\" ".format(command.strip()))
+            gdb_list.append("-ex \"continue\" ")
 
             # Copy the current environment which must include WEZTERM_UNIX_SOCKET
             env = os.environ.copy()
@@ -351,12 +380,12 @@ if do_debug:
                 ).format(title="OCD {}".format(program_name), serial=picoprobe_serial, gdb_port=gdb_port, tcl_port=tcl_port, telnet_port=telnet_port, root_pw=config["root_pw"], elf=elf_file_path, target_arch=target_arch)
 
                 spawn_cmd_1 = ["wezterm", "cli", "spawn", "--", "bash", "-c", openocd_startup]
-                tasks.append(subprocess.Popen(spawn_cmd_1, env=env))
+                ocd_tasks.append(subprocess.Popen(spawn_cmd_1, env=env))
             else:
                 openocd_startup = (
                     "echo '{root_pw}' | sudo -S openocd -f interface/cmsis-dap.cfg -f target/{target_arch}.cfg "
                     "-c 'adapter serial {serial}' "
-                    "-c 'adapter speed 5000'"                    
+                    "-c 'adapter speed 5000'"                  
                     "-c 'gdb port {gdb_port}'"
                     "-c 'tcl port {tcl_port}'"
                     "-c 'telnet port {telnet_port}'"
@@ -364,7 +393,7 @@ if do_debug:
                 ).format(serial=picoprobe_serial, gdb_port=gdb_port, tcl_port=tcl_port, telnet_port=telnet_port, root_pw=config["root_pw"], elf=elf_file_path, target_arch=target_arch)
 
                 spawn_cmd_1 = ["bash", "-c", openocd_startup]
-                tasks.append(subprocess.Popen(spawn_cmd_1, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, env=env))
+                ocd_tasks.append(subprocess.Popen(spawn_cmd_1, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, env=env))
             
             print("Starting OpenOCD...")
             time.sleep(OPENOCD_INIT_TIMEOUT)            
@@ -375,5 +404,29 @@ if do_debug:
                 "exec bash"
             ).format(title="GDB {}".format(program_name), gdb_list=" ".join(gdb_list))
             spawn_cmd_2 = ["wezterm", "cli", "spawn", "--", "bash", "-c", gdb_startup]
-            tasks.append(subprocess.Popen(spawn_cmd_2, env=env))
+            gdb_tasks.append(subprocess.Popen(spawn_cmd_2, env=env, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True))
+            gdb_tasks_ports.append(int(gdb_port))
+
 print("Done.")
+while True:
+    answer = input("Type 'stop' or 's' to finish\n").strip().lower()
+    if answer in ('stop', 's'):
+        for gdb_port in gdb_tasks_ports:
+            while True:
+                time.sleep(0.5)
+                if send_gdb_command_remote(gdb_port, "delete"):
+                    print("Sent delete command to GDB.")
+                    break
+                else:   
+                    print("Trying again.")
+            while True:
+                time.sleep(0.5)
+                if send_gdb_command_remote(gdb_port, "delete"):
+                    print("Sent continue command to GDB.")
+                    break
+                else:   
+                    print("Trying again.")
+        break
+time.sleep(1)
+#subprocess.run(["killall", "-9", "wezterm"])
+#subprocess.run(["killall", "-9", "wezterm-gui"])
