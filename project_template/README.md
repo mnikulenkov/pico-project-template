@@ -15,7 +15,7 @@ Config has "devices" and "programs" lists: a program is attached to a device, ea
 **DEBUG_DEVICE_NAME** - DEVICE_NAME of debug probe connected to target device.\
 **GDB_PORT**\
 **TCL_PORT**\
-**TELNET_PORT**
+**TELNET_PORT**\
 **GDB_COMMANDS_PATH** - path to list of GDB commands to be executed per program.
 
 **BEHAVIOUR** *run/build_only* - "run" to build and flash target devices; "build_only" to just write binaries to BUILD_PATH.\

@@ -5,7 +5,10 @@ A template for Raspberry Pi Pico CMake projects with multiple boards. It streaml
 ## Installation
 
 1. Clone [pico SDK](https://github.com/raspberrypi/pico-sdk)
-2. Navigate to pico SDK folder and execute: git submodule update --init 
+2. Navigate to pico SDK folder and execute: 
+```
+$ git submodule update --init 
+```
 3. Build and install [picotool](https://github.com/raspberrypi/picotool)
 4. Build and install openocd:
 ```
