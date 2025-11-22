@@ -33,16 +33,16 @@ Steps to configure picos:
 1. [Identify pico serial numer](print_serial)
 2. Flash pico with [auto-bootsel binary](auto-bootsel/bin) OR with [pico-debug](https://github.com/raspberrypi/debugprobe/releases) for a debug probe
 3. Configure [project template](project_template) for your setup
-4. Keep pico connected to your machine via USB
+4. Keep pico continuously connected to your machine via USB
 
 Usage: execute [run.sh](project_template/run.sh)
-Type 'stop' in main tab to finish.
+Type '*stop*' in main tab to finish.
 
-**WARNING!** If you forcibly close the WezTerm window while the board is stopped at a breakpoint, the board may hang, requiring you to unplug it and manually flash the [auto-bootsel binary](auto-bootsel/bin) while holding the BOOTSEL button. To avoid this, before finishing, make sure to clear all breakpoints and resume program execution. If your program is halted at a breakpoint, the board may freeze unless you re-flash or reconnect it to power source. In all active GDB prompts, execute 'f' to delete breakpoints and continue.
+**WARNING!** If you forcibly close the WezTerm window while the board is stopped at a breakpoint, the board may hang, requiring you to unplug it and manually flash the [auto-bootsel binary](auto-bootsel/bin) while holding the BOOTSEL button. To avoid this, before finishing, make sure to clear all breakpoints and resume program execution. If your program is halted at a breakpoint, the board may freeze unless you re-flash or reconnect it to power source. In all active GDB prompts, execute '*f*' to delete breakpoints and continue.
 
 Notice:
 1. Flashing with [auto-bootsel binary](auto-bootsel/bin) should be performed only once per each pico
-2. CmakeLists.txt must follow [the template](cmakelists_template/CMakeLists.txt)
+2. *CmakeLists.txt* must follow [the template](cmakelists_template/CMakeLists.txt)
 3. Main function has to start with *stdio_init_all()*
 4. If pico happened to freeze unexpectedly, flash it with [auto-bootsel binary](auto-bootsel/bin) or try reconnecting it to power source
 5. Try clearing the build folder if you encounter errors during the build process
