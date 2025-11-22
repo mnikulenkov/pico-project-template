@@ -47,6 +47,6 @@ Notice:
 4. If pico happened to freeze unexpectedly, flash it with [auto-bootsel binary](auto-bootsel/bin) or try reconnecting it to power source
 5. Try clearing the build folder if you encounter errors during the build process
 6. WezTerm integration requires that it **NOT** be used as the primary terminal emulator. You should avoid running [run.sh](project_template/run.sh) directly through WezTerm.
-7. If a boards freezes or turns to manual BOOTSEL on '*picotool load*' execution, try to experiment with *PICO_RELOAD_TIMEOUT*, *PICOTOOL_LOAD_TIMEOUT*, *OPENOCD_INIT_TIMEOUT* parameters in [project.py](project_template/project.py)
+7. If a boards freezes or turns to manual BOOTSEL on '*picotool load*' execution, try experimenting with *PICO_RELOAD_TIMEOUT*, *PICOTOOL_LOAD_TIMEOUT*, *OPENOCD_INIT_TIMEOUT* parameters in [project.py](project_template/project.py)
 
 See [examples](examples).
