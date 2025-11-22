@@ -14,7 +14,8 @@
     "debug_device_name": "debug_probe1", 
     "gdb_port": "3333",
     "tcl_port": "6666",
-    "telnet_port": "4444"
+    "telnet_port": "4444",
+    "gdb_commands_path": "src/blink100ms/gdb_commands.txt"
     },
     {
     "name": "blink2", 
@@ -24,7 +25,8 @@
     "debug_device_name": "debug_probe2", 
     "gdb_port": "3334",
     "tcl_port": "6667",
-    "telnet_port": "4445"
+    "telnet_port": "4445",
+    "gdb_commands_path": "src/blink400ms/gdb_commands.txt"
     }
 ],
 "behaviour": "run",
@@ -34,6 +36,5 @@
 "gdb_debug": "off",
 "openocd_output": "on",
 "picotool_listen": "on",
-"gdb_commands_path": "gdb_commands.json",
 "root_pw": "password"
 }

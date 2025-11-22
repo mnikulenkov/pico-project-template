@@ -80,8 +80,6 @@ if "build_nproc" not in config.keys():
     err("An error occurred: No 'build_nproc' in json structure.")
 if "gdb_debug" not in config.keys():
     err("An error occurred: No 'gdb_debug' in json structure.")
-if "gdb_commands_path" not in config.keys():
-    err("An error occurred: No 'gdb_commands_path' in json structure.")
 if "openocd_output" not in config.keys():
     err("An error occurred: No 'openocd_output' in json structure.")
 if "picotool_listen" not in config.keys():
@@ -114,6 +112,8 @@ for program in config["programs"]:
         err("An error occurred: Incorrect program specified, no 'tcl_port' found")
     if "telnet_port" not in program:
         err("An error occurred: Incorrect program specified, no 'telnet_port' found")
+    if "gdb_commands_path" not in program:
+        err("An error occurred: Incorrect program specified, no 'gdb_commands_path' found")
     if '-' in program["name"]:
         err("Forbidden symbol '-' in program name")
 
@@ -137,6 +137,9 @@ for program in config["programs"]:
     program["gdb_port"] = program["gdb_port"].strip()
     program["tcl_port"] = program["tcl_port"].strip()
     program["telnet_port"] = program["telnet_port"].strip()
+    program["gdb_commands_path"] = program["gdb_commands_path"].strip()
+    if program["gdb_commands_path"][0] != '/':
+        program["gdb_commands_path"] = "{v1}/{v2}".format(v1=script_dir, v2=program["gdb_commands_path"])
 
 config["behaviour"] = config["behaviour"].lower().strip()
 config["build_path"] = config["build_path"].strip()
@@ -146,9 +149,6 @@ config["build_nproc"] = config["build_nproc"].strip()
 config["pico_sdk_path"] = config["pico_sdk_path"].strip()
 if config["pico_sdk_path"][0] != '/':
         config["pico_sdk_path"] = "{v1}/{v2}".format(v1=script_dir, v2=config["pico_sdk_path"])
-config["gdb_commands_path"] = config["gdb_commands_path"].strip()
-if config["gdb_commands_path"][0] != '/':
-        config["gdb_commands_path"] = "{v1}/{v2}".format(v1=script_dir, v2=config["gdb_commands_path"])
 config["openocd_output"] = config["openocd_output"].lower().strip()
 config["picotool_listen"] = config["picotool_listen"].lower().strip()
 config["root_pw"] = config["root_pw"].strip()
@@ -212,15 +212,6 @@ if behaviour not in ("run", "build_only"):
     err("Behaviour {} is not supported.".format(behaviour))
 if config["gdb_debug"] not in GDB_DEBUG:
     err("An error occurred: incorrect gdb_debug parameter '{}' found.".format(config["gdb_debug"]))
-
-gdb_commands = []
-if len(config["gdb_commands_path"]) > 0:
-    try:
-        with open(config["gdb_commands_path"], 'r') as file:
-            gdb_commands = json.loads(file.read())
-        file.close()
-    except IOError as e:
-        err("An error occurred: {}".format(e))
 
 if not ignore_stdout_warning and config["picotool_listen"] == "off" and config["behaviour"] == "run":
     while True:
@@ -314,21 +305,7 @@ time.sleep(PICOTOOL_LOAD_TIMEOUT)
 ocd_tasks = []
 gdb_tasks = []
 gdb_tasks_ports = []
-openocd_gdb_conn_proc = None
 if do_debug: 
-    openocd_gdb_conn = [
-    "openocd",
-    "-f", "openocd.cfg",
-    "-c", "gdb_max_connections 4"
-    ]
-
-    openocd_gdb_conn_proc = subprocess.Popen(
-        openocd_gdb_conn,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        text=True
-    )
-
     openocd_startup_commands = []
     gdb_startup_commands = []
 
@@ -361,12 +338,40 @@ if do_debug:
             else:
                 target_arch = "rp2350"
             
-            gdb_list = ["-ex \"set confirm off\"", "-ex \"set pagination off\"","-ex \"file {}\" ".format(elf_file_path), "-ex \"target remote localhost:{}\" ".format(gdb_port), "-ex \"load\" ", "-ex \"monitor reset init\" "]
-            if gdb_commands:
-                if program_name in gdb_commands.keys():
-                    for command in gdb_commands[program_name]:
-                        gdb_list.append("-ex \"{}\" ".format(command.strip()))
-            gdb_list.append("-ex \"continue\" ")
+            openocd_config_path = "{v1}/openocd-{v2}.cfg".format(v1=config_path, v2=program_name)
+            openocd_config_text = (
+                "source [find interface/cmsis-dap.cfg]\n"
+                "source [find target/{target_arch}.cfg]\n"
+                "adapter speed 5000\n"
+                "gdb_port {gdb_port}\n"
+                "tcl_port {tcl_port}\n"
+                "telnet_port {telnet_port}\n"
+                "adapter serial {serial}\n"
+                "program {elf} verify reset\n").format(gdb_port=gdb_port, tcl_port=tcl_port, telnet_port=telnet_port, target_arch=target_arch, elf=elf_file_path, serial=picoprobe_serial)
+            with open(openocd_config_path, "w") as f:
+                f.write(openocd_config_text)
+
+            gdb_pre_text = (
+                "set confirm off\n"
+                "set pagination off\n"
+                "file {elf_file_path}\n"
+                "target remote localhost:{gdb_port}\n"
+                "define f\n"
+                "delete\n"
+                "continue\n"
+                "end\n" 
+                "delete\n"
+                "load\n"
+                "monitor reset init\n"      
+            ).format(elf_file_path=elf_file_path, gdb_port=gdb_port)
+            gdb_post_text = "\ncontinue"
+
+            with open(program["gdb_commands_path"], 'r') as file:
+                gdb_text = file.read()
+            gdb_text = gdb_pre_text + gdb_text + gdb_post_text
+            gdb_config_path = "{v1}/{v2}-gdb.txt".format(v1=config_path, v2=program_name)
+            with open(gdb_config_path, "w") as f:
+                f.write(gdb_text)
 
             # Copy the current environment which must include WEZTERM_UNIX_SOCKET
             env = os.environ.copy()
@@ -375,22 +380,16 @@ if do_debug:
                 # Assuming WezTerm GUI is already running, spawn new tabs with your commands:
                 openocd_startup = (
                     "echo -ne '\\033]2;{title}\\007'; "
-                    "echo '{root_pw}' | sudo -S openocd -f interface/cmsis-dap.cfg -f target/{target_arch}.cfg -c 'adapter serial {serial}' -c 'adapter speed 5000' -c 'gdb port {gdb_port}' -c 'tcl port {tcl_port}' -c 'telnet port {telnet_port}' -c 'program {elf} verify reset'; "
-                 "exec bash"
-                ).format(title="OCD {}".format(program_name), serial=picoprobe_serial, gdb_port=gdb_port, tcl_port=tcl_port, telnet_port=telnet_port, root_pw=config["root_pw"], elf=elf_file_path, target_arch=target_arch)
+                    "echo '{root_pw}' | sudo -S openocd -f {ocd_cfg_path}; "
+                    "exec bash"
+                ).format(title="OCD {}".format(program_name), root_pw=config["root_pw"], ocd_cfg_path=openocd_config_path)
 
                 spawn_cmd_1 = ["wezterm", "cli", "spawn", "--", "bash", "-c", openocd_startup]
                 ocd_tasks.append(subprocess.Popen(spawn_cmd_1, env=env))
             else:
                 openocd_startup = (
-                    "echo '{root_pw}' | sudo -S openocd -f interface/cmsis-dap.cfg -f target/{target_arch}.cfg "
-                    "-c 'adapter serial {serial}' "
-                    "-c 'adapter speed 5000'"                  
-                    "-c 'gdb port {gdb_port}'"
-                    "-c 'tcl port {tcl_port}'"
-                    "-c 'telnet port {telnet_port}'"
-                    "-c 'program {elf} verify reset'"
-                ).format(serial=picoprobe_serial, gdb_port=gdb_port, tcl_port=tcl_port, telnet_port=telnet_port, root_pw=config["root_pw"], elf=elf_file_path, target_arch=target_arch)
+                    "echo '{root_pw}' | sudo -S openocd -f {ocd_cfg_path}"
+                ).format(root_pw=config["root_pw"], ocd_cfg_path=openocd_config_path)
 
                 spawn_cmd_1 = ["bash", "-c", openocd_startup]
                 ocd_tasks.append(subprocess.Popen(spawn_cmd_1, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, env=env))
@@ -400,33 +399,34 @@ if do_debug:
     
             gdb_startup = (
                 "echo -ne '\\033]2;{title}\\007'; "
-                "gdb-multiarch {gdb_list}; "
+                "gdb-multiarch -x {gdb_config_path}; "
                 "exec bash"
-            ).format(title="GDB {}".format(program_name), gdb_list=" ".join(gdb_list))
+            ).format(title="GDB {}".format(program_name), gdb_config_path=gdb_config_path)
             spawn_cmd_2 = ["wezterm", "cli", "spawn", "--", "bash", "-c", gdb_startup]
             gdb_tasks.append(subprocess.Popen(spawn_cmd_2, env=env, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True))
             gdb_tasks_ports.append(int(gdb_port))
 
 print("Done.")
+print("NOTICE: before finishing, make sure to clear all breakpoints and resume program execution. If your program is halted at a breakpoint, the board may freeze unless you re-flash or reboot it. In all active GDB prompts, execute 'f' to delete breakpoints and continue.")
 while True:
     answer = input("Type 'stop' or 's' to finish\n").strip().lower()
     if answer in ('stop', 's'):
-        for gdb_port in gdb_tasks_ports:
-            while True:
-                time.sleep(0.5)
-                if send_gdb_command_remote(gdb_port, "delete"):
-                    print("Sent delete command to GDB.")
-                    break
-                else:   
-                    print("Trying again.")
-            while True:
-                time.sleep(0.5)
-                if send_gdb_command_remote(gdb_port, "delete"):
-                    print("Sent continue command to GDB.")
-                    break
-                else:   
-                    print("Trying again.")
+#        for gdb_port in gdb_tasks_ports:
+#            while True:
+#                time.sleep(0.5)
+#                if send_gdb_command_remote(gdb_port, "delete"):
+#                    print("Sent delete command to GDB.")
+#                    break
+#                else:   
+#                    print("Trying again.")
+#            while True:
+#                time.sleep(0.5)
+#                if send_gdb_command_remote(gdb_port, "delete"):
+#                    print("Sent continue command to GDB.")
+#                    break
+#                else:   
+#                    print("Trying again.")
         break
-time.sleep(1)
-#subprocess.run(["killall", "-9", "wezterm"])
-#subprocess.run(["killall", "-9", "wezterm-gui"])
+#time.sleep(1)
+subprocess.run(["killall", "-9", "wezterm"])
+subprocess.run(["killall", "-9", "wezterm-gui"])

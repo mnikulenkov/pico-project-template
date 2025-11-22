@@ -16,6 +16,7 @@ Config has "devices" and "programs" lists: a program is attached to a device, ea
 **GDB_PORT**\
 **TCL_PORT**\
 **TELNET_PORT**
+**GDB_COMMANDS_PATH** - path to list of GDB commands to be executed per program.
 
 **BEHAVIOUR** *run/build_only* - "run" to build and flash target devices; "build_only" to just write binaries to BUILD_PATH.\
 **BUILD_PATH**\
@@ -24,11 +25,10 @@ Config has "devices" and "programs" lists: a program is attached to a device, ea
 **GDB_DEBUG** *on/of* - to run GDB debugging via WezTerm.\
 **OPENOCD_OUTPUT** *on/of* - to show OpenOCD tabs along with GDB in WezTerm.\
 **PICOTOOL_LISTEN** *on/of* - to build programs which make pico listen to BOOTSEL command so picotool can load them without unplugging. Setting PICOTOOL_LISTEN to "off" will disable this feature and you will have to manually flash pico with [picotool-friendly binary](../auto-bootsel/bin) to use this project template for autoflashing.\
-**GDB_COMMANDS_PATH** - path to list of GDB commands to be executed per program.
 **ROOT_PW** - root password. Required by picotool and openOCD 
 
 ## Executing GDB commands
 
-Provide [GDB commads](gdb_commands_template.json) to be executed per program before GDB starts.
+Provide [GDB commads](examples/build_and_debug/src/blink100ms/gdb_commands.txt) to be executed per program before GDB starts.
 
 [GDB commands sheet](https://github.com/reveng007/GDB-Cheat-Sheet)
