@@ -38,7 +38,7 @@ Steps to configure picos:
 Usage: execute [run.sh](project_template/run.sh)
 Type '*stop*' in main tab to finish.
 
-**WARNING!** If you forcibly close the WezTerm window while the board is stopped at a breakpoint, the board may hang, requiring you to unplug it and manually flash the [auto-bootsel binary](auto-bootsel/bin) while holding the BOOTSEL button. To avoid this, before finishing, make sure to clear all breakpoints and resume program execution. If your program is halted at a breakpoint, the board may freeze unless you re-flash or reconnect it to power source. In all active GDB prompts, execute '*f*' to delete breakpoints and continue.
+**WARNING!** If you forcibly close the WezTerm window while the board is stopped at a breakpoint, the board may hang, requiring you to unplug it and manually flash the [auto-bootsel binary](auto-bootsel/bin) while holding the BOOTSEL button. To avoid this, before finishing, make sure to clear all breakpoints and resume program execution. If your program is halted at a breakpoint, the board may freeze unless you re-flash or reconnect it to power source. In all active GDB prompts, execute 'f' to delete breakpoints and continue.
 
 Notice:
 1. Flashing with [auto-bootsel binary](auto-bootsel/bin) should be performed only once per each pico
